@@ -1,0 +1,10 @@
+package ratio
+version = 1.0.0
+
+authors = "Kiana Sheibani"
+license = "MIT"
+
+sourcedir = "src"
+readme = "README.md"
+
+modules = Data.Ratio
