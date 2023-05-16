@@ -2,6 +2,8 @@ module Data.Ratio
 
 infix 10 //
 
+%default total
+
 ||| Ratio types, represented by a numerator and denominator of type `a`.
 |||
 ||| Most numeric operations require an instance `Integral a` in order to
@@ -25,6 +27,7 @@ Rational = Ratio Integer
 -- it's total without knowing exactly what the implementation of `Integral a` is,
 -- so using an `assert_total` here would be potentially unsafe. The only option
 -- is to mark this function, and by extention `reduce`, as non-total.
+covering
 gcd : (Eq a, Integral a) => a -> a -> a
 gcd x y =
   if x == 0 then y
@@ -34,7 +37,7 @@ gcd x y =
 ||| Reduce a ratio by dividing both components by their common factor. Most
 ||| operations automatically reduce the returned ratio, so explicitly calling
 ||| this function is usually unnecessary.
-export
+export covering
 reduce : (Eq a, Integral a) => Ratio a -> Ratio a
 reduce (MkRatio n d) =
   let g = gcd n d in MkRatio (n `div` g) (d `div` g)
@@ -91,13 +94,13 @@ Show a => Show (Ratio a) where
     let p' = User 10
     in  showParens (p >= p') (showPrec p' n ++ " // " ++ showPrec p' d)
 
-export
+export covering
 (Eq a, Integral a) => Num (Ratio a) where
   MkRatio n d + MkRatio m b = reduce $ MkRatio (n*b + m*d) (d*b)
   MkRatio n d * MkRatio m b = reduce $ MkRatio (n*m) (d*b)
   fromInteger x = MkRatio (fromInteger x) 1
 
-export
+export covering
 (Eq a, Integral a, Neg a) => Neg (Ratio a) where
   negate (MkRatio n d) = MkRatio (-n) d
   MkRatio n d - MkRatio m b = reduce $ MkRatio (n*b - m*d) (d*b)
