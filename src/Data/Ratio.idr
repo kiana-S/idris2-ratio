@@ -1,8 +1,11 @@
 module Data.Ratio
 
-infix 10 //
+import Data.Maybe
+import Data.So
+import Data.IntegralGCD
 
 %default total
+
 
 ||| Ratio types, represented by a numerator and denominator of type `a`.
 |||
@@ -22,56 +25,59 @@ Rational : Type
 Rational = Ratio Integer
 
 
--- This function is almost always total; after all, it's a fairly standard
--- implementation of Euclid's algorithm. Unfortunately, we can't _guarantee_
--- it's total without knowing exactly what the implementation of `Integral a` is,
--- so using an `assert_total` here would be potentially unsafe. The only option
--- is to mark this function, and by extention `reduce`, as non-total.
-covering
-gcd : (Eq a, Integral a) => a -> a -> a
-gcd x y =
-  if x == 0 then y
-  else if y == 0 then x
-  else gcd y (x `mod` y)
-
 ||| Reduce a ratio by dividing both components by their common factor. Most
 ||| operations automatically reduce the returned ratio, so explicitly calling
 ||| this function is usually unnecessary.
-export covering
-reduce : (Eq a, Integral a) => Ratio a -> Ratio a
+export
+reduce : IntegralGCD a => Ratio a -> Ratio a
 reduce (MkRatio n d) =
   let g = gcd n d in MkRatio (n `div` g) (d `div` g)
 
 
+||| Construct a ratio of two values, returning `Nothing` if the denominator is
+||| zero.
+export
+mkRatioMaybe : IntegralGCD a => (n, d : a) -> Maybe (Ratio a)
+mkRatioMaybe n d = toMaybe (d /= 0) (reduce $ MkRatio n d)
+
+infix 9 //
+
 ||| Construct a ratio of two values.
-export partial
-(//) : (Eq a, Integral a) => a -> a -> Ratio a
-n // d = case d /= 0 of
-            True => reduce $ MkRatio n d
+export
+(//) : IntegralGCD a => (n, d : a) -> {auto 0 ok : So (d /= 0)} -> Ratio a
+(//) n d = reduce $ MkRatio n d
+
+
+||| Round a ratio down to a positive integer.
+export
+floor : Integral a => Ratio a -> a
+floor (MkRatio n d) = n `div` d
 
 
 namespace Ratio
-  ||| Return the numerator of the fraction in reduced form.
+  ||| Return the numerator of the ratio in reduced form.
   export %inline
   numer : Ratio a -> a
   numer = nm
 
-  ||| Return the numerator of the fraction in reduced form.
+  ||| Return the numerator of the ratio in reduced form.
   export %inline
   (.numer) : Ratio a -> a
   (.numer) = nm
 
-  ||| Return the denominator of the fraction in reduced form.
+  ||| Return the denominator of the ratio in reduced form.
   ||| This value is guaranteed to always be positive.
   export %inline
   denom : Ratio a -> a
   denom = dn
 
-  ||| Return the denominator of the fraction in reduced form.
+  ||| Return the denominator of the ratio in reduced form.
   ||| This value is guaranteed to always be positive.
   export %inline
   (.denom) : Ratio a -> a
   (.denom) = dn
+
+
 
 
 export
@@ -94,23 +100,23 @@ Show a => Show (Ratio a) where
     let p' = User 10
     in  showParens (p >= p') (showPrec p' n ++ " // " ++ showPrec p' d)
 
-export covering
-(Eq a, Integral a) => Num (Ratio a) where
+export
+IntegralGCD a => Num (Ratio a) where
   MkRatio n d + MkRatio m b = reduce $ MkRatio (n*b + m*d) (d*b)
   MkRatio n d * MkRatio m b = reduce $ MkRatio (n*m) (d*b)
   fromInteger x = MkRatio (fromInteger x) 1
 
-export covering
-(Eq a, Integral a, Neg a) => Neg (Ratio a) where
+export
+(IntegralGCD a, Neg a) => Neg (Ratio a) where
   negate (MkRatio n d) = MkRatio (-n) d
   MkRatio n d - MkRatio m b = reduce $ MkRatio (n*b - m*d) (d*b)
 
 export
-(Eq a, Integral a, Abs a) => Abs (Ratio a) where
+(IntegralGCD a, Abs a) => Abs (Ratio a) where
   abs (MkRatio n d) = MkRatio (abs n) (abs d)
 
 export
-(Eq a, Integral a) => Fractional (Ratio a) where
+IntegralGCD a => Fractional (Ratio a) where
   recip (MkRatio n d) = case n /= 0 of True => MkRatio d n
   MkRatio n d / MkRatio m b = case m /= 0 of
     True => reduce $ MkRatio (n*b) (m*d)
