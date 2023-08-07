@@ -40,6 +40,14 @@ export
 mkRatioMaybe : IntegralGCD a => (n, d : a) -> Maybe (Ratio a)
 mkRatioMaybe n d = toMaybe (d /= 0) (reduce $ MkRatio n d)
 
+
+||| Create a ratio of two values.
+||| WARNING: This is only safe if the denominator is not zero!
+export %unsafe
+unsafeMkRatio : (n, d : a) -> Ratio a
+unsafeMkRatio = MkRatio
+
+
 infix 9 //
 
 ||| Construct a ratio of two values.
