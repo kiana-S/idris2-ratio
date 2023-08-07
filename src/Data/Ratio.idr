@@ -47,7 +47,7 @@ mkRatio n d = case d /= 0 of
   True => reduce $ MkRatio n d
 
 ||| Create a ratio of two values, unsafely assuming that they are coprime and
-||| the denomindator is non-zero.
+||| the denominator is non-zero.
 ||| WARNING: This function will behave erratically and may crash your program
 ||| if these conditions are not met!
 export %unsafe
