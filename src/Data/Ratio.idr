@@ -40,9 +40,16 @@ export
 mkRatioMaybe : IntegralGCD a => (n, d : a) -> Maybe (Ratio a)
 mkRatioMaybe n d = toMaybe (d /= 0) (reduce $ MkRatio n d)
 
-
 ||| Create a ratio of two values.
-||| WARNING: This is only safe if the denominator is not zero!
+export partial
+mkRatio : IntegralGCD a => (n, d : a) -> Ratio a
+mkRatio n d = case d /= 0 of
+  True => reduce $ MkRatio n d
+
+||| Create a ratio of two values, unsafely assuming that they are coprime and
+||| the denomindator is non-zero.
+||| WARNING: This function will behave erratically and may crash your program
+||| if these conditions are not met!
 export %unsafe
 unsafeMkRatio : (n, d : a) -> Ratio a
 unsafeMkRatio = MkRatio
